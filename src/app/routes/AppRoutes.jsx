@@ -69,8 +69,8 @@ export const AppRoutes = ({ banks, handleDonorSearch }) => {
                 <Route path="/notifications" element={<NotificationsView />} />
                 <Route path="/profile" element={<DonorProfile id={user?.id} mob={mob} />} />
                 <Route path="/settings" element={<SettingsView />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     )
 }
