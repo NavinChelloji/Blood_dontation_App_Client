@@ -1,18 +1,19 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Button } from "../components/common/button/Button"
 import ExtraCard from "../components/common/card/Card"
 import Input from "../components/common/Input"
 import { useNavigate } from "react-router-dom";
 import useAbortController from "../hooks/useAbortController";
 import { login } from "../services/login.service";
+import { AuthContext } from "../context/AuthContext";
 
 export const LoginPage = () => {
     const navigate = useNavigate();
-    const { getSignal } = useAbortController()
+    const { getSignal } = useAbortController();
     const [loginError, setLoginError] = useState('');
     const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
-    const [sendOtp, setSendOtp] = useState(false);
+    const {setUser} = useContext(AuthContext)
 
 
     const handleLogin = async (e) => {
@@ -28,10 +29,11 @@ export const LoginPage = () => {
             const response = await login(
                 { phone, password }
                 , { signal: getSignal() });
+            setUser(response.user);
             navigate('/dashboard');
-            console.log(await response.json());
+            localStorage.setItem("token", response.data?.token);
         } catch (e) {
-            setLoginError('Invalid credentials. Please try again.');
+            setLoginError(e.data.message || e.data.errors?.[0].message);
             console.log(e)
         }
     };
@@ -55,16 +57,16 @@ export const LoginPage = () => {
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
                     />
-                    {sendOtp && <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
                         <Input
-                            label="Enter OTP"
-                            placeholder="Enter 6-digit OTP"
+                            label="Password"
+                            type="password"
+                            placeholder="••••••••••••"
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                         />
-                    </div>}
-                    {!sendOtp && <Button variant="outline" type="button" onClick={() => setSendOtp(true)}>Send OTP</Button>}
-                    {sendOtp && <Button variant="outline" type="submit">Login</Button>}
+                    </div>
+                    <Button variant="outline" type="submit">Login</Button>
 
                 </form>
             </ExtraCard>

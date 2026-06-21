@@ -1,50 +1,52 @@
-import { useState } from "react";
+
 import { NAV_MENU } from "../../constants/navmenu";
 import { LogOut } from "lucide-react";
 import { Button } from "../common/button/Button";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 
-export const SidebarContent = ({ mob, setSideOpen }) => {
-  const [active, setActive] = useState("Dashboard");
+export const SidebarContent = () => {
+  // const [active, setActive] = useState("Dashboard");
+   const { pathname } = useLocation();
   const navigate = useNavigate();
   const onLogout = ()=>{
+    localStorage.removeItem("token");
     navigate('/');
   }
   return (
     <>
       <nav style={{ flex: 1, padding: "8px 0" }}>
-        {NAV_MENU.map(([Icon, label, badge]) => {
-          const act = active === label;
-          return (
-            <button
-              key={label}
-              onClick={() => { setActive(label); if (mob) setSideOpen(false); }}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 10,
-                padding: "8px 14px 8px 13px", border: "none", fontFamily: "inherit",
-                background: act ? 'var(--primary-bg-color)' : "transparent",
-                color: act ? 'var(--primary-color)' : 'var(--sub)',
-                fontWeight: act ? 700 : 500, fontSize: 12,
-                cursor: "pointer", textAlign: "left",
-                borderLeft: `3px solid ${act ? 'var(--primary-color)' : "transparent"}`,
-                transition: "background 0.12s, color 0.12s",
-              }}
-            >
-              <Icon size={15} />
-              <span style={{ flex: 1 }}>{label}</span>
-              {badge && (
-                <span style={{
-                  background: 'var(--primary-color)', color: "#fff", borderRadius: "50%",
-                  width: 16, height: 16, fontSize: 9, fontWeight: 700,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  {badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {NAV_MENU.map((item) =>{
+          const isActive = pathname === item.path || 
+              (item.id === 'requestsList' && pathname.startsWith('/requests')) ||
+              (item.id === 'donorSearch' && pathname.startsWith('/donors'));
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontWeight: isActive ? '600' : '500',
+                  fontSize: '0.875rem',
+                  textAlign: 'left',
+                  textDecoration: 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            );
+        }
+        )}
       </nav>
 
       {/* CTA card inside sidebar */}

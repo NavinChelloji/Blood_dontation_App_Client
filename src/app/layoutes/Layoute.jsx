@@ -1,24 +1,17 @@
 import { Header } from "../../components/Header/Header";
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import { SidebarContent } from "../../components/sidebar/SideBar";
-import { Dashboard } from "../../features/dashboard/Dashboard";
 import { Footer } from "../../components/footer/Footer";
+import { Navigate, Outlet } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+import ProtectedRoute from "../routes/ProtectedRoute";
 
-export function LayoutContainer() {
-    const [sideOpen, setSideOpen] = useState(true);
-    const [w, setW] = useState(1200);
-    useEffect(() => {
-        const upd = () => {
-            const nw = window.innerWidth;
-            setW(nw);
-            setSideOpen(nw >= 768);
-        };
-        upd();
-        window.addEventListener("resize", upd);
-        return () => window.removeEventListener("resize", upd);
-    }, []);
-    const mob = w < 768;
+export function LayoutContainer({mob, sideOpen, setSideOpen}) {
+       const {user} = useContext(AuthContext);
     const SBW = 214;
+    if (!user) {
+    return <Navigate to="/login" replace />;
+  }
     return <div className="layout-container">
         <Header
             sideOpen={sideOpen}
@@ -52,8 +45,11 @@ export function LayoutContainer() {
                     mob={mob}
                     setSideOpen={setSideOpen} />
             </aside>
-            <main style={{ padding: mob ? 14 : 20, margin: "0 auto" }}>
-            <Dashboard mob={mob}></Dashboard>
+            <main style={{ padding: mob ? 14 : 20, margin: "0 auto" , display: "flex", flexDirection: "column", minHeight: "calc(100vh - 60px)" ,justifyContent: "space-between"}}>
+            {/* <Dashboard mob={mob}></Dashboard> */}
+            <ProtectedRoute>
+            <Outlet />
+            </ProtectedRoute>
             <Footer></Footer>
             </main>
         </div>

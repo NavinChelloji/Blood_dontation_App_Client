@@ -2,8 +2,39 @@ import {
   Droplets,MapPin,ChevronDown,Menu,X,Bell
 } from "lucide-react";
 import { Avatar } from "../common/avatar/Avatar";
+import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 export function Header({sideOpen, setSideOpen, mob}){
+   const {user} = useContext(AuthContext);
+    const [areaName, setAreaName] =useState('Loading location...');
+
+  useEffect(() => {
+    const fetchAreaName = async () => {
+      try {
+        const lat = user?.lat || user?.latitude;
+        const lng = user?.lng || user?.longitude;
+        if (!lat || !lng) {
+          setAreaName('Location Locked');
+          return;
+        }
+        
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`);
+        if (response.ok) {
+          const data = await response.json();
+          const addr = data.address || {};
+          const area = addr.suburb || addr.neighbourhood || addr.suburb || addr.residential || addr.town || addr.city_district || addr.city || 'Location Locked';
+          setAreaName(`${area}`);
+        } else {
+          setAreaName('Location Locked');
+        }
+      } catch (err) {
+        console.error('Error fetching area name:', err);
+        setAreaName('Location Locked');
+      }
+    };
+    fetchAreaName();
+  }, [user]);
     return <header className="layout-header">
         {/* Hamburger */}
         <button
@@ -45,7 +76,7 @@ export function Header({sideOpen, setSideOpen, mob}){
           {!mob && (
             <div className="user-location-info">
               <MapPin size={13} color='var(--primary-color)' />
-              <span>Hyderabad, TS</span>
+              <span>{areaName}</span>
               <ChevronDown size={12} />
             </div>
           )}
@@ -58,11 +89,11 @@ export function Header({sideOpen, setSideOpen, mob}){
 
           {/* Profile */}
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <Avatar name="Rahul Verma" sz={33} />
+            <Avatar name={user?.name} sz={33} />
             {!mob && (
               <div>
-                <div style={{ fontSize:11, fontWeight:700, color:'var(--text)', lineHeight:1.2 }}>Rahul Verma</div>
-                <div style={{ fontSize:9, color:'var(--muted)' }}>Donor</div>
+                <div style={{ fontSize:11, fontWeight:700, color:'var(--text)', lineHeight:1.2 }}>{user?.name}</div>
+                <div style={{ fontSize:9, color:'var(--muted)' }}>{user?.role}</div>
               </div>
             )}
           </div>

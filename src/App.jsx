@@ -1,82 +1,118 @@
 
-import { Route, Routes } from 'react-router-dom'
+import { useContext, useEffect, useState } from 'react';
 import './App.css'
-import { LayoutContainer } from './app/layoutes/Layoute'
+import { AppRoutes } from './app/routes/AppRoutes'
+import io from 'socket.io-client';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from './context/AuthContext';
+import { Button } from './components/common/button/Button';
+import { AlertTriangle, Info } from 'lucide-react';
 
-import { useState } from 'react'
-import LandingPage from './Pages/LandingPage'
-import { LoginPage } from './Pages/LoginPage'
+let socket;
+
+
 
 function App() {
-  const [user, ] = useState(null);
-  // const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [alertToast, setAlertToast] = useState(null);
+  const navigate = useNavigate();
 
-  // App data states
-  const [requests, ] = useState([]);
-  const [banks, ] = useState([]);
-  const [notifications, ] = useState([]);
-  const [, setSearchedDonors] = useState([]);
-  const [activeDonorsCount, ] = useState(0);
+  useEffect(() => {
+    if (user) {
+      // fetchData();
 
-  // Alert toast message
-  // const [alertToast, setAlertToast] = useState(null);
+      // Setup WebSocket
+      socket = io(import.meta.env.VITE_BACKEND_URL);
 
-   const handleDonorSearch = async (bloodGroup, radius) => {
-    try {
-      const response = await fetch(`/api/donors/search?bloodGroup=${bloodGroup}&radius=${radius}&lat=17.4156&lng=78.4347`);
-      const data = await response.json();
-      setSearchedDonors(data);
-    } catch (err) {
-      console.error('Failed to search donors:', err);
+      socket.on('connect', () => {
+        console.log('Connected to WebSocket server');
+      });
+
+      // Handle real-time alert broadcasts
+      socket.on('emergency_alert', (data) => {
+        setAlertToast({
+          type: 'danger',
+          message: data.message,
+          action: () => {
+            navigate(`/requests/${data.request.id}`);
+            setAlertToast(null);
+          }
+        });
+        // Add notification locally instantly
+      });
+
+      // socket.on('notification_broadcast', (notif) => {
+      //   setNotifications(prev => [notif, ...prev]);
+      // });
+
+      // socket.on('requests_updated', (updatedRequests) => {
+      //   setRequests(updatedRequests);
+      // });
+
+      // socket.on('banks_updated', (updatedBanks) => {
+      //   setBanks(updatedBanks);
+      // });
+
+      socket.on('donation_accepted', (data) => {
+        setAlertToast({
+          type: 'success',
+          message: data.message,
+          action: () => {
+            navigate(`/requests/${data.request.id}`);
+            setAlertToast(null);
+          }
+        });
+      });
     }
-  };
 
-  return (
-    <Routes>
-      <Route path="/" element={
-          <div style={{ padding: '0 2rem', backgroundColor: 'var(--bg-secondary)', minHeight: '100vh' }}>
-            <LandingPage 
-              stats={{
-                totalDonors: '25,680',
-                activeDonors: activeDonorsCount,
-                livesSaved: '15,230',
-                totalBanks: banks.length
-              }} 
-              nearbyBanks={banks} 
-              onSearch={handleDonorSearch}
-            />
-          </div>
-        } />
-        <Route path="/login" element={
-          <div style={{ padding: '0 2rem', backgroundColor: 'var(--bg-secondary)', minHeight: '100vh' }}>
-            <LoginPage/>
-          </div>
-        } />
-        <Route path="/dashboard" element={
-            <LayoutContainer 
-              user={user} 
-              requests={requests} 
-              notifications={notifications} 
-              // onToggleStatus={handleToggleStatus}
-              activeDonorsCount={activeDonorsCount}
-            />
-          } />
-          {/* <Route path="/requests" element={<BloodRequestsList requests={requests} />} />
-          <Route path="/requests/new" element={<BloodRequestWizard onSubmit={handleCreateRequest} />} />
-          <Route path="/requests/:id" element={<BloodRequestDetails requests={requests} user={user} onAcceptRequest={handleAcceptRequest} />} />
-          
-          <Route path="/donors" element={<DonorSearch onSearch={handleDonorSearch} donors={searchedDonors} />} />
-          <Route path="/donors/:id" element={<DonorProfile donors={searchedDonors} currentUser={user} />} />
-          <Route path="/profile" element={<DonorProfile donors={searchedDonors} currentUser={user} />} />
-          
-          <Route path="/banks" element={<BloodBanks banks={banks} onUpdateStock={handleUpdateStock} user={user} />} />
-          <Route path="/banks/:id" element={<BloodBanks banks={banks} onUpdateStock={handleUpdateStock} user={user} />} />
-          
-          <Route path="/notifications" element={<NotificationsView notifications={notifications} />} />
-          <Route path="/settings" element={<SettingsView />} />
-    <Route path="*" element={<Navigate to="/" replace />} /> */}
-    </Routes>
-  )
+    return () => {
+      if (socket) 
+      socket.disconnect();
+    };
+  }, [user]);
+
+  // Sync user identification on websocket when logged in
+  useEffect(() => {
+    if (user && socket) {
+      socket.emit('register_user', user.id);
+    }
+  }, [user]);
+  return (<>
+    {alertToast && (
+      <div
+        style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: alertToast.type === 'danger' ? '#FEF2F2' : '#ECFDF5',
+          border: alertToast.type === 'danger' ? '1px solid #FCA5A5' : '1px solid #A7F3D0',
+          color: alertToast.type === 'danger' ? 'var(--danger)' : 'var(--success)',
+          padding: '1rem',
+          borderRadius: '12px',
+          boxShadow: 'var(--shadow-lg)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          width: '320px',
+          animation: 'slideIn 0.3s ease-out'
+        }}
+      >
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+          {alertToast.type === 'danger' ? <AlertTriangle size={20} /> : <Info size={20} />}
+          <span style={{ fontSize: '0.8125rem', fontWeight: '600', lineHeight: 1.4 }}>{alertToast.message}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-end' }}>
+          <Button size="sm" variant="secondary" onClick={() => setAlertToast(null)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Dismiss</Button>
+          {alertToast.action && (
+            <Button size="sm" variant="primary" onClick={alertToast.action} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>View</Button>
+          )}
+        </div>
+      </div>
+    )}
+    <AppRoutes>
+    </AppRoutes>
+  </>)
 }
 
 export default App

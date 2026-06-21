@@ -4,7 +4,12 @@ export const getOtp = async()=>{
 
 }
 
-export const login = async(payload)=>{
-    return await axiosClient.post('/api/auth/login',{...payload});
+export const login = async(payload,signal)=>{
+    return await axiosClient.post('/api/auth/login',{...payload}, signal);
 
+}
+
+
+export const register = async(payload,signal)=>{
+    return await axiosClient.post('/api/auth/register',{...payload}, signal);
 }

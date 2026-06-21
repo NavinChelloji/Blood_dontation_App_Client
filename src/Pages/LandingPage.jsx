@@ -24,6 +24,10 @@ export default function LandingPage({ setScreen, stats = {}, nearbyBanks = [], o
             🩸 Blood<span style={{ color: 'var(--text-primary)' }}>Donor</span>
           </span>
         </div>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <Button variant="outline" size="sm" onClick={() => navigate('/login')}>Login</Button>
+          <Button variant="primary" size="sm" onClick={() => navigate('/register')}>Register</Button>
+        </div>
       </div>
 
       {/* Hero Section */}
